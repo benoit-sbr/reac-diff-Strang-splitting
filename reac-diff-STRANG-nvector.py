@@ -63,12 +63,12 @@ ymin = 0.
 ymax = 1.1
 
 # First set up the figure, the axis, and the plot element we want to animate
-fig   = plt.figure()
-ax    = plt.axes(xlim = (xmin, xmax), ylim = (ymin, ymax))
+fig = plt.figure()
+ax  = plt.axes(xlim = (xmin, xmax), ylim = (ymin, ymax))
 linep, = ax.plot([], [], lw = 2)
 lineq, = ax.plot([], [], lw = 2)
 lineD, = ax.plot([], [], lw = 2)
-time_text = ax.text(0.02, 0.95, '', transform = ax.transAxes)
+time_text  = ax.text(0.02, 0.95, '', transform = ax.transAxes)
 
 def indice():
     """ indice function. It will give me a nice iterable """
@@ -81,16 +81,15 @@ def animate(i):
     lineq.set_data(x, q[i, : ])
     lineD.set_data(x, D[i, : ])
     time_text.set_text('time = %.1f' % T[i])
-    return linep, lineq, lineD, time_text
+    ax.set_title('time = %.1f' % T[i])
+#    return linep, lineq, lineD, time_text
 
-# call the animator. blit = True means only re-draw the parts that have changed.
-courbe = animation.FuncAnimation(fig, animate, indice, interval = 200, blit = True)
+# call the animator. 'blit = True' means only re-draw the parts that have changed.
+# but pay attention! If using 'blit = True', then animate has to have a return statement and then I cannot have the title to change...
+courbe = animation.FuncAnimation(fig, animate, indice, interval = 200)
 
-# save the animation as an mp4. This requires ffmpeg or mencoder to be
-# installed. The extra_args ensure that the x264 codec is used, so that
-# the video can be embedded in html5. You may need to adjust this for
-# your system: for more information, see
-# http://matplotlib.sourceforge.net/api/animation_api.html
+# save the animation as a gif/mp4
 #courbe.save('genet_pop.gif', fps = 30, writer = 'imagemagick')
+#courbe.save('genet_pop.mp4', fps = 30, extra_args = ['-vcodec', 'libx264'])
 
 plt.show()
