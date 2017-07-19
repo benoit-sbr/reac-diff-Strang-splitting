@@ -26,8 +26,8 @@ class Grid(object):
         self.xmin = xmin
         self.xmax = xmax
 
-        self.dx = (xmax - xmin) / nx
-        self.x  = (np.arange(nx + ng + 1) + 0.5 - ng) * self.dx + xmin
+        self.dx = (xmax - xmin) / (nx + ng)
+        self.x  = (np.arange(ng + nx + ng)) * self.dx + xmin
 
         self.ilo = ng - 1
         self.ihi = ng + nx
@@ -35,10 +35,10 @@ class Grid(object):
         self.data = {}
 
         for v in vars:
-            self.data[v] = np.zeros((3*(nx + ng + 1)), dtype = np.float64)
+            self.data[v] = np.zeros((3*(ng + nx + ng)), dtype = np.float64)
 
     def scratch_array(self):
-        return np.zeros((3*(self.nx + self.ng + 1)), dtype = np.float64)
+        return np.zeros((3*(self.ihi + self.ng)), dtype = np.float64)
 
     def initialize(self):
         """ initial condition """
@@ -84,27 +84,27 @@ def diffuse(gr, phi, kappa, dt):
     u = phi[0*gr.ihi + 0*gr.ng : 1*gr.ihi + 1*gr.ng]
     v = phi[1*gr.ihi + 1*gr.ng : 2*gr.ihi + 2*gr.ng]
     w = phi[2*gr.ihi + 2*gr.ng : 3*gr.ihi + 3*gr.ng]
-    diag     = -2.0 * np.eye(gr.nx + gr.ng + 1)
-    surdiag  = np.eye(gr.nx + gr.ng + 1, k = 1)
-    sousdiag = np.eye(gr.nx + gr.ng + 1, k = -1)
+    diag     = -2.0 * np.eye(gr.ihi + gr.ng)
+    surdiag  = np.eye(gr.ihi + gr.ng, k = 1)
+    sousdiag = np.eye(gr.ihi + gr.ng, k = -1)
     A  = diag + surdiag + sousdiag
     A[0, 1] = 2.0
     A[-1, -2] = 2.0
-    I  = np.eye(gr.nx + gr.ng + 1)
+    I  = np.eye(gr.ihi + gr.ng)
     TR = I + alpha / 2.0 * A # Tridiagonal matrix in the Right hand side
     R1 = TR @ u
     R2 = TR @ v
     R3 = TR @ w
     #TL = I - alpha / 2.0 * A # Tridiagonal matrix in the Left hand side
     # create the diagonal, upper and lower parts of the matrix
-    D = (1.0 + alpha)*np.ones(gr.nx + gr.ng + 1)
-    U = -0.5*alpha*np.ones(gr.nx + gr.ng + 1)
-    L = -0.5*alpha*np.ones(gr.nx + gr.ng + 1)
-    U[0] = 0.0 # Valeur de toute façon inutile pour solve_banded
+    D = (1.0 + alpha) * np.ones(gr.ihi + gr.ng)
+    U = -0.5 * alpha  * np.ones(gr.ihi + gr.ng)
+    L = -0.5 * alpha  * np.ones(gr.ihi + gr.ng)
+    U[0]  = 0.0 # Valeur de toute façon inutile pour solve_banded
     L[-1] = 0.0 # Valeur de toute façon inutile pour solve_banded
     # set the boundary conditions by changing the matrix elements
     # homogeneous Neumann BC
-    U[1] = -1.0*alpha
+    U[1]  = -1.0*alpha
     L[-2] = -1.0*alpha
     BL = np.matrix([U, D, L]) # Banded matrix in the Left hand side
 
@@ -144,7 +144,7 @@ def evolve(nx, xmin, xmax, tmin, tmax, kappa, frhs):
     phi1 = gr.data["phi1"]
     phi2 = gr.data["phi2"]
 
-    sol  = np.zeros((T.size, 3*(gr.nx + gr.ng + 1)), dtype = np.float64)
+    sol  = np.zeros((T.size, 3*(gr.ihi + gr.ng)), dtype = np.float64)
 
     # initialize
     gr.initialize()

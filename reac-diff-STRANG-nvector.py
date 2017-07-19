@@ -39,7 +39,7 @@ def frhs(t, phi):
     return [dudt, dvdt, dwdt]
 
 # Parameters for the problem
-nx   = 256
+nx   = 198
 xmin = 0.
 xmax = 100.
 tmin = 0.
@@ -70,16 +70,13 @@ lineq, = ax.plot([], [], lw = 2)
 lineD, = ax.plot([], [], lw = 2)
 time_text = ax.text(0.02, 0.95, '', transform = ax.transAxes)
 
-# initialization function: plot the background of each frame
-def init():
-    linep.set_data([], [])
-    lineq.set_data([], [])
-    lineD.set_data([], [])
-    time_text.set_text('')
-    return linep, lineq, lineD, time_text
+def indice():
+    """ indice function. It will give me a nice iterable """
+    for i in range(T.size):
+        yield i
 
-# animation function. This is called sequentially
 def animate(i):
+    """ animate function. It is called following the indice iterable """
     linep.set_data(x, p[i, : ])
     lineq.set_data(x, q[i, : ])
     lineD.set_data(x, D[i, : ])
@@ -87,14 +84,13 @@ def animate(i):
     return linep, lineq, lineD, time_text
 
 # call the animator. blit = True means only re-draw the parts that have changed.
-courbe = animation.FuncAnimation(fig, animate, init_func = init,
-                                 interval = 100, blit = True)
+courbe = animation.FuncAnimation(fig, animate, indice, interval = 200, blit = True)
 
 # save the animation as an mp4. This requires ffmpeg or mencoder to be
 # installed. The extra_args ensure that the x264 codec is used, so that
 # the video can be embedded in html5. You may need to adjust this for
 # your system: for more information, see
 # http://matplotlib.sourceforge.net/api/animation_api.html
-courbe.save('genet_pop.gif', fps = 30, writer = 'imagemagick')
+#courbe.save('genet_pop.gif', fps = 30, writer = 'imagemagick')
 
 plt.show()
