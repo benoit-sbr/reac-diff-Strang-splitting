@@ -49,7 +49,7 @@ class Grid(object):
 # provide an initial condition such that y1>=0, y2>=0, y3>=0 and y1+y2+y3<=1
         SA = 0.1
         SB = 0.1
-        p = 1./(1.+np.exp(np.sqrt(SA)*(self.x-15.)))
+        p = 1./(1.+np.exp(np.sqrt(SA)*(self.x-35.)))
         q = 1./(1.+np.exp(np.sqrt(SB)*(self.x-45.)))
         phi[0 * (self.ihi + self.ng) : 1 * (self.ihi + self.ng)] = p     *q
         phi[1 * (self.ihi + self.ng) : 2 * (self.ihi + self.ng)] = p     *(1.-q)

@@ -12,6 +12,7 @@ B. Sarels
 """
 
 import numpy as np
+import os
 from matplotlib import animation
 from matplotlib import pyplot as plt
 from scipy.optimize import curve_fit
@@ -140,7 +141,7 @@ axes[0].legend(handles = [line1p, line1q, line1D])
 axes[1].legend(handles = [line1vp, line1vq])
 
 def animate(i):
-    """ animate function """
+# animate function
     line1p.set_data (grille.x, p[i, : ])
     line1q.set_data (grille.x, q[i, : ])
     line1D.set_data (grille.x, D[i, : ])
@@ -152,55 +153,57 @@ def animate(i):
 
 # call animation
 courbe = animation.FuncAnimation(figure1, animate, frames = T.size, repeat = False)
-figure1.show()
+#figure1.show()
+plt.close(figure1)
 
-
+FileNameRoot = 'sA'+str(sA)+'SA'+str(SA)+'sB'+str(sB)+'SB'+str(SB)+'rAB'+str(rAB)+'closerIC'
+FolderName = 'data'+FileNameRoot+'/'
+if not os.path.exists(FolderName):
+    os.makedirs(FolderName)
 
 #figure2 = plt.figure(figsize = (12, 8), dpi = 80)
-#for n in range(0, phi.shape[0], 3):
-#    plt.clf()
+for n in range(0, phi.shape[0], 3):
+    figure2 = plt.figure()
 #    plt.title('Allele frequencies at time $t = {:3.1f}$'.format(T[n]))
-#    plt.grid(True)
-#    plt.xlim(xmin, xmax)
-#    plt.ylim(ymin0, ymax0)
+    plt.grid(True)
+    plt.xlim(xmin, xmax)
+    plt.ylim(ymin0, ymax0)
 #    plt.xlabel('Space')
 #    plt.ylabel('')
-#    plt.plot(grille.x, p[n, : ], label = 'p')
-#    plt.plot(grille.x, q[n, : ], label = 'q')
-#    plt.plot(grille.x, D[n, : ], label = 'D')
-#    plt.legend(loc = 'best')
+    plt.plot(grille.x, p[n, : ], label = 'p')
+    plt.plot(grille.x, q[n, : ], label = 'q')
+    plt.plot(grille.x, D[n, : ], label = 'D')
+    plt.legend(loc = 'best')
 #    figure2.show()
 #    plt.pause(0.1)
-#    FileNameTimestepN = 'sA'+str(sA)+'SA'+str(SA)+'sB'+str(sB)+'SB'+str(SB)+'rAB'+str(rAB)+'timestep'+str(n)+'.png'
-##    plt.savefig('data/'+FileNameTimestepN, bbox_inches='tight')
-#
-#figure3 = plt.figure(figsize = (12, 8), dpi = 80)
-#plt.title('Instantaneous wave speed')
-#line3vp, = plt.plot(T[2 : ], dcentrespdt[2 : ], label = 'speed of p')
-#color3p = line3vp.get_color()
-#plt.hlines(cp, tmin, tmax, lw = 1, colors = color3p, linestyles = 'dashed')
-#plt.plot(T[2 : ], dcentresqdt[2 : ], label = 'speed of q')
-#plt.grid(True)
-#plt.xlim(tmin, tmax)
-#plt.ylim(ymin1, ymax1)
-#plt.xlabel('Time')
-#plt.ylabel('Wave speed')
-#plt.legend(loc = 'best')
-#figure3.show()
-#FileNameSpeeds = 'sA'+str(sA)+'SA'+str(SA)+'sB'+str(sB)+'SB'+str(SB)+'rAB'+str(rAB)+'speeds.png'
-#plt.savefig('data/'+FileNameSpeeds, bbox_inches='tight')
-#
-#
-#
-#FileNameGlobal = 'sA'+str(sA)+'SA'+str(SA)+'sB'+str(sB)+'SB'+str(SB)+'rAB'+str(rAB)
-#
+    FileNameTimestepN = FileNameRoot+'timestep'+str(n)+'.png'
+    plt.savefig(FolderName+FileNameTimestepN, bbox_inches='tight')
+    plt.close(figure2)
+
+figure3 = plt.figure(figsize = (12, 8), dpi = 80)
+plt.title('Instantaneous wave speed')
+line3vp, = plt.plot(T[2 : ], dcentrespdt[2 : ], label = 'speed of p')
+color3p = line3vp.get_color()
+plt.hlines(cp, tmin, tmax, lw = 1, colors = color3p, linestyles = 'dashed')
+plt.plot(T[2 : ], dcentresqdt[2 : ], label = 'speed of q')
+plt.grid(True)
+plt.xlim(tmin, tmax)
+plt.ylim(ymin1, ymax1)
+plt.xlabel('Time')
+plt.ylabel('Wave speed')
+plt.legend(loc = 'best')
+figure3.show()
+FileNameSpeeds = FileNameRoot+'speeds.png'
+plt.savefig(FolderName+FileNameSpeeds, bbox_inches='tight')
+plt.close(figure3)
+
+
 # save the animation as a gif file
 #print ('debut de sauvegarde')
 #start1 = time.time()
-#courbe.save('data/'+FileNameGlobal+'.gif', dpi = 80, writer = 'imagemagick')
+#courbe.save(FolderName+FileNameRoot+'.gif', dpi = 80, writer = 'imagemagick')
 #print ('temps de sauvegarde', time.time() - start1)
 #print ('fin de sauvegarde')
-#
-# save the data as an npy file
-#np.save('data/'+FileNameGlobal+'.npy', phi)
 
+# save the data as an npy file
+np.save(FolderName+FileNameRoot+'.npy', phi)
