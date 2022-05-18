@@ -19,17 +19,21 @@ from scipy.optimize import curve_fit
 #import time
 
 from STRANGcore import evolve
+from theory import cp0, cp1
+
+# Parameters for initial condition
+xp0 = 60.
+xq0 = 60.
 
 # Parameters for diffusion
 kappa = np.array([1., 1., 1.])
 
 # Parameters for reaction
-sA = 0.
-SA = 0.1
-cp = sA/np.sqrt(SA)
-sB = 0.
-SB = 0.1
-rAB = 0.1
+sA = 0.01
+SA = 0.05
+sB = 0.01
+SB = 0.05
+rAB = 0.01
 # Should they be put in the function itself?
 def frhs(t, phi, x):
     """ reaction ODE righthand side """
@@ -59,13 +63,14 @@ def frhs(t, phi, x):
     return np.array([dy1dt, dy2dt, dy3dt])
 
 # Parameters for the problem
-nx   = 299
+nx   = 399
 xmin = 0.
-xmax = 100.
+xmax = 200.
 tmin = 0.
-tmax = 300.
+tmax = 250.
 
-phi, T, grille = evolve(nx, 3, xmin, xmax, tmin, tmax, kappa, frhs)
+# Numerical results
+phi, T, grille = evolve(nx, 3, xmin, xmax, tmin, tmax, xp0, xq0, kappa, SA, SB, frhs)
 
 y1 = phi[ : , 0*phi.shape[1]//3 : 1*phi.shape[1]//3 ]
 y2 = phi[ : , 1*phi.shape[1]//3 : 2*phi.shape[1]//3 ]
@@ -80,7 +85,7 @@ D = y1 * y4 - y2 * y3
 def kink(x, centre):
     S = 0.1
     return 1./(1.+np.exp(np.sqrt(S)*(x-centre)))
-
+"""
 def energie(centre, x, y, S):
     erreur = 0.
     for i in range(0, y.size):
@@ -93,7 +98,7 @@ def gradenergie(centre, x, y, S):
         grad += - (y[i] - 1./(1.+np.exp(np.sqrt(S)*(x[i]-centre)))) * np.sqrt(S) * \
         np.exp(np.sqrt(S)*(x[i]-centre)) * (1.+np.exp(np.sqrt(S)*(x[i]-centre)))**-2.
     return 2.*grad/y.size
-
+"""
 centres = np.zeros((phi.shape[0], 2))
 for n in range(phi.shape[0]): # fit
     # initial guess
@@ -110,11 +115,11 @@ dcentrespdt = np.gradient(centres[ : , 0], T[1]-T[0])
 dcentresqdt = np.gradient(centres[ : , 1], T[1]-T[0])
 
 # Parameters for the visualisation
-petit = 0.05
+petit = (dcentrespdt[2 : ].max() - dcentresqdt[2 : ].min())/20.
 ymin0 = p.min() - petit
 ymax0 = p.max() + petit
-ymin1 = dcentresqdt[2 : ].min() - petit
-ymax1 = dcentrespdt[2 : ].max() + petit
+ymin1 = cp0(sA, SA) - petit
+ymax1 = cp1(sA, SA, rAB) + petit
 
 # 1. create a figure with several subplots
 figure1, axes = plt.subplots(1, 2, dpi = 80, figsize = (16, 12), sharex = 'col') # faire attention aux dpi si les figures sont pour latex
@@ -125,7 +130,8 @@ line1q,  = axes[0].plot([], [], lw = 2, label = 'q')
 line1D,  = axes[0].plot([], [], lw = 2, label = 'D')
 line1vp, = axes[1].plot([], [], lw = 2, label = 'speed of p')
 color1p  = line1vp.get_color()
-axes[1].hlines(cp, tmin, tmax, lw = 1, colors = color1p, linestyles = 'dashed')
+axes[1].hlines(cp0(sA, SA), tmin, tmax, lw = 1, colors = color1p, linestyles = 'dashed')
+axes[1].hlines(cp1(sA, SA, rAB), tmin, tmax, lw = 1, colors = color1p, linestyles = 'dashed')
 line1vq, = axes[1].plot([], [], lw = 2, label = 'speed of q')
 
 # 3. axes initializations
@@ -156,15 +162,18 @@ courbe = animation.FuncAnimation(figure1, animate, frames = T.size, repeat = Fal
 #figure1.show()
 plt.close(figure1)
 
-FileNameRoot = 'sA'+str(sA)+'SA'+str(SA)+'sB'+str(sB)+'SB'+str(SB)+'rAB'+str(rAB)+'closerIC'
-FolderName = 'data'+FileNameRoot+'/'
+# in case of closer initial conditions
+#FileNameRoot = 'sA'+str(sA)+'SA'+str(SA)+'sB'+str(sB)+'SB'+str(SB)+'rAB'+str(rAB)+'closerIC'
+# in case of stacked initial conditions
+FileNameRoot = 'sA'+str(sA)+'SA'+str(SA)+'sB'+str(sB)+'SB'+str(SB)+'rAB'+str(rAB)+'stackedIC'
+FolderName = 'data' + FileNameRoot + '/'
 if not os.path.exists(FolderName):
     os.makedirs(FolderName)
 
 #figure2 = plt.figure(figsize = (12, 8), dpi = 80)
 for n in range(0, phi.shape[0], 3):
     figure2 = plt.figure()
-#    plt.title('Allele frequencies at time $t = {:3.1f}$'.format(T[n]))
+    plt.title('Allele frequencies at time $t = {:3.1f}$'.format(T[n]))
     plt.grid(True)
     plt.xlim(xmin, xmax)
     plt.ylim(ymin0, ymax0)
@@ -184,9 +193,11 @@ figure3 = plt.figure(figsize = (12, 8), dpi = 80)
 plt.title('Instantaneous wave speed')
 line3vp, = plt.plot(T[2 : ], dcentrespdt[2 : ], label = 'speed of p')
 color3p = line3vp.get_color()
-plt.hlines(cp, tmin, tmax, lw = 1, colors = color3p, linestyles = 'dashed')
+plt.hlines(cp0(sA, SA), tmin, tmax, lw = 1, colors = color3p, linestyles = 'dashed')
+plt.hlines(cp1(sA, SA, rAB), tmin, tmax, lw = 1, colors = color3p, linestyles = 'dashed')
 plt.plot(T[2 : ], dcentresqdt[2 : ], label = 'speed of q')
 plt.grid(True)
+plt.yticks([i/500.0 for i in range(0, 50)])
 plt.xlim(tmin, tmax)
 plt.ylim(ymin1, ymax1)
 plt.xlabel('Time')

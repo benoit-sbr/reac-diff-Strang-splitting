@@ -42,15 +42,13 @@ class Grid(object):
     def scratch_array(self):
         return np.zeros((self.systemsize*(self.ihi + self.ng)), dtype = np.float64)
 
-    def initialize(self):
+    def initialize(self, xp0, xq0, SA, SB):
         """ initial condition """
 
         phi = self.data["phi"]
 # provide an initial condition such that y1>=0, y2>=0, y3>=0 and y1+y2+y3<=1
-        SA = 0.1
-        SB = 0.1
-        p = 1./(1.+np.exp(np.sqrt(SA)*(self.x-35.)))
-        q = 1./(1.+np.exp(np.sqrt(SB)*(self.x-45.)))
+        p = 1./(1.+np.exp(np.sqrt(SA)*(self.x-xp0)))
+        q = 1./(1.+np.exp(np.sqrt(SB)*(self.x-xq0)))
         phi[0 * (self.ihi + self.ng) : 1 * (self.ihi + self.ng)] = p     *q
         phi[1 * (self.ihi + self.ng) : 2 * (self.ihi + self.ng)] = p     *(1.-q)
         phi[2 * (self.ihi + self.ng) : 3 * (self.ihi + self.ng)] = (1.-p)*q
@@ -133,7 +131,7 @@ def est_dt(gr, kappa, sigma = 1.):
 
     return dt
 
-def evolve(nx, systemsize, xmin, xmax, tmin, tmax, kappa, frhs):
+def evolve(nx, systemsize, xmin, xmax, tmin, tmax, xp0, xq0, kappa, SA, SB, frhs):
     """
     the main evolution loop.  Evolve
 
@@ -157,7 +155,7 @@ def evolve(nx, systemsize, xmin, xmax, tmin, tmax, kappa, frhs):
     sol  = np.zeros((T.size, systemsize*(gr.ihi + gr.ng)), dtype = np.float64)
 
     # initialize
-    gr.initialize()
+    gr.initialize(xp0, xq0, SA, SB)
     sol[0] = phi
 
     for n in range(1, T.size):
