@@ -53,7 +53,7 @@ class Grid(object):
         phi[1 * (self.ihi + self.ng) : 2 * (self.ihi + self.ng)] = p     *(1.-q)
         phi[2 * (self.ihi + self.ng) : 3 * (self.ihi + self.ng)] = (1.-p)*q
 
-def react(gr, phi, systemsize, frhs, dt):
+def react(gr, phi, systemsize, frhs, reac_params, dt):
     """ react phi through timestep dt """
 
     phinew = gr.scratch_array()
@@ -70,7 +70,7 @@ def react(gr, phi, systemsize, frhs, dt):
 # - implicit Adams method (for non-stiff problems) (method = "adams")
 # - a method based on backward differentiation formulas (for stiff problems) (method = "bdf")
         r.set_integrator("vode", method = "adams")
-        r.set_f_params(gr.x[i])
+        r.set_f_params(gr.x[i], reac_params)
         r.integrate(r.t + dt)
         for k in range(0, systemsize):
             phinew[k * (gr.ihi + gr.ng) + i] = r.y[k]
@@ -131,21 +131,22 @@ def est_dt(gr, kappa, sigma = 1.):
 
     return dt
 
-def evolve(nx, systemsize, xmin, xmax, tmin, tmax, xp0, xq0, kappa, SA, SB, frhs):
+def evolve(nx, systemsize, xmin, xmax, time_bounds, xp0, xq0, kappa, reac_params, frhs):
     """
     the main evolution loop.  Evolve
 
     phi_t = kappa phi_{xx} + frhs(phi)
 
-    from t = tmin to tmax
+    from t = tmin to tmax given in time_bounds
     """
+    sA, SA, sB, SB, rAB = reac_params
 
     # create the grid
     gr = Grid(nx, systemsize, xmin, xmax, vars = ["phi", "phi1", "phi2"])
 
     # create the time vector
     dt = est_dt(gr, kappa, 2.)
-    T  = np.arange(tmin, tmax, dt) # note that more often than not, tmax is not a point in T
+    T  = np.arange(*time_bounds, dt) # note that more often than not, tmax is not a point in T
 
     # pointers to the data at various stages
     phi  = gr.data["phi"]
@@ -160,11 +161,11 @@ def evolve(nx, systemsize, xmin, xmax, tmin, tmax, xp0, xq0, kappa, SA, SB, frhs
 
     for n in range(1, T.size):
         # react for dt/2
-        phi1[:] = react(gr, phi, systemsize, frhs, dt/2)
+        phi1[:] = react(gr, phi, systemsize, frhs, reac_params, dt/2)
         # diffuse for dt
         phi2[:] = diffuse(gr, phi1, systemsize, kappa, dt)
         # react for dt/2 -- this is the updated solution
-        phi[:] = react(gr, phi2, systemsize, frhs, dt/2)
+        phi[:] = react(gr, phi2, systemsize, frhs, reac_params, dt/2)
 
         # debug
         y1 = phi[0 * (gr.ihi + gr.ng) : 1 * (gr.ihi + gr.ng)]
